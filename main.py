@@ -7,9 +7,7 @@ from tkinter import ttk
 import requests
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Load environment variables from .env file
 load_dotenv()
 
 class BlackScholesModel:
@@ -38,8 +36,8 @@ class BlackScholesModel:
         :param option_type: "Call" or "Put".
         :return: Estimated option price.
         """
-        # Simulate terminal stock prices
-        np.random.seed(42)  # For reproducibility
+
+        np.random.seed(42)
         z = np.random.standard_normal(num_simulations)
         ST = self.S * np.exp((self.r - 0.5 * self.sigma**2) * self.T + self.sigma * np.sqrt(self.T) * z)
 
@@ -51,7 +49,6 @@ class BlackScholesModel:
         else:
             raise ValueError("Invalid option type. Use 'Call' or 'Put'.")
 
-        # Discount payoffs to present value
         option_price = np.exp(-self.r * self.T) * np.mean(payoffs)
         return option_price
 
@@ -103,11 +100,10 @@ def update_strike_price_slider():
         ticker = ticker_entry.get().upper()
         current_stock_price, sigma = fetch_stock_info(ticker)
 
-        # Update slider range dynamically based on stock price
         strike_price_slider.config(from_=current_stock_price * 0.5,
                                    to=current_stock_price * 1.5,
                                    resolution=1)
-        strike_price_slider.set(current_stock_price)  # Set default to current price
+        strike_price_slider.set(current_stock_price)
 
         result_text.set(f"Stock price retrieved: ${current_stock_price:.2f}")
     except Exception as e:
@@ -139,7 +135,7 @@ def fetch_risk_free_rate():
             return rate
     except Exception as e:
         print(f"Error fetching risk-free rate: {e}")
-        return 0.05  # Default risk-free rate
+        return 0.05
 
 
 
@@ -153,52 +149,41 @@ def calculate_and_plot_pl(option_type):
 
         model = BlackScholesModel(S, K, T, r, sigma)
 
-        # Black-Scholes analytical prices
         call_price = model.call_price()
         put_price = model.put_price()
 
-        # Breakeven Price Calculation
         option_cost = call_price if option_type == "Call" else put_price
         breakeven_price = K + option_cost if option_type == "Call" else K - option_cost
 
-        # Monte Carlo simulation prices
         monte_carlo_call = model.monte_carlo_simulation(option_type="Call")
         monte_carlo_put = model.monte_carlo_simulation(option_type="Put")
 
-        # Generate stock price range
         stock_prices = np.linspace(0.5 * S, 1.5 * S, 100)
 
-        # Calculate P/L based on option type
         if option_type == "Call":
             pl = np.maximum(stock_prices - K, 0) - call_price
         else:
             pl = np.maximum(K - stock_prices, 0) - put_price
 
-        # Plot P/L
         plt.figure(figsize=(12, 7))
         plt.plot(stock_prices, pl, label=f'{option_type} P/L', color='blue', linewidth=2)
 
-        # Highlight profit and loss areas
         plt.fill_between(stock_prices, pl, where=(pl > 0), interpolate=True, color='green', alpha=0.3, label='Profit Region')
         plt.fill_between(stock_prices, pl, where=(pl <= 0), interpolate=True, color='red', alpha=0.3, label='Loss Region')
 
-        # Add breakeven and zero-profit lines
         plt.axhline(0, color='black', linestyle='--', label='Break-Even Line')
         plt.axvline(breakeven_price, color='orange', linestyle='--', label=f'Break-Even Price (${breakeven_price:.2f})')
 
-        # Add titles and labels
         plt.title(f'{option_type} Option P/L Diagram', fontsize=16)
         plt.xlabel(f'{ticker.upper()} Stock Price at Expiration', fontsize=14)
         plt.ylabel('Profit / Loss ($)', fontsize=14)
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.legend(fontsize=12)
 
-        # Show probability of profit
         POP = 1 - norm.cdf(model.d2) if option_type == "Call" else norm.cdf(-model.d2)
         plt.text(0.7 * stock_prices.max(), 0.7 * pl.max(), f"Probability of Profit: {POP:.2%}", fontsize=12, color='black',
                  bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'))
 
-        # Show the plot
         plt.show()
 
     except Exception as e:
@@ -223,17 +208,13 @@ def update_plot_and_greeks(*args):
         put_price = model.put_price()
         greeks = model.greeks()
 
-        # Determine the option cost and breakeven price
         option_cost = call_price if option_type.get() == "Call" else put_price
         breakeven_price = K + option_cost if option_type.get() == "Call" else K - option_cost
 
-        # Calculate Probability of Profit (POP)
         POP = 1 - norm.cdf(model.d2) if option_type.get() == "Call" else norm.cdf(-model.d2)
 
-        # Generate stock price range
         stock_prices = np.linspace(0.5 * current_stock_price, 1.5 * current_stock_price, 100)
 
-        # Calculate P/L based on option type
         if option_type.get() == "Call":
             pl = np.maximum(stock_prices - K, 0) - call_price
             label = f'Call P/L (K={K})'
@@ -241,7 +222,6 @@ def update_plot_and_greeks(*args):
             pl = np.maximum(K - stock_prices, 0) - put_price
             label = f'Put P/L (K={K})'
 
-        # Plot P/L
         ax.clear()
         ax.plot(stock_prices, pl, label=label, color='blue')
         ax.axhline(0, color='black', linestyle='--', linewidth=1, label='Break-Even Line')
@@ -253,7 +233,6 @@ def update_plot_and_greeks(*args):
         ax.grid()
         canvas.draw()
 
-        # Update Greeks and POP
         greeks_display = "\n".join([f"{key}: {value:.4f}" for key, value in greeks.items()])
         greeks_text.set(f"{option_type.get()} Greeks:\n{greeks_display}\n"
                         f"Cost of Option: ${option_cost:.2f}\n"
@@ -263,49 +242,39 @@ def update_plot_and_greeks(*args):
     except Exception as e:
         result_text.set(f"Error: {str(e)}")
 
-# Create the GUI
 root = tk.Tk()
 root.title("Black-Scholes Option Calculator")
 
-# Input fields
 ttk.Label(root, text="Stock Ticker:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
 ticker_entry = ttk.Entry(root)
 ticker_entry.grid(row=0, column=1, padx=5, pady=5)
 
-# Fetch stock info button
 fetch_button = ttk.Button(root, text="Fetch Stock Info", command=update_strike_price_slider)
 fetch_button.grid(row=0, column=2, padx=5, pady=5)
 
-# Strike price slider
 ttk.Label(root, text="Strike Price:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
 strike_price_slider = tk.Scale(root, from_=50, to=150, orient=tk.HORIZONTAL, resolution=1)
 strike_price_slider.grid(row=1, column=1, columnspan=2, sticky=tk.W + tk.E, padx=5, pady=5)
 
-# Time to maturity entry
 ttk.Label(root, text="Time to Maturity (days):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
 maturity_entry = ttk.Entry(root)
 maturity_entry.grid(row=2, column=1, padx=5, pady=5)
 
-# Option type dropdown
 ttk.Label(root, text="Option Type:").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
 option_type = tk.StringVar(value="Call")
 option_type_dropdown = ttk.OptionMenu(root, option_type, "Call", "Call", "Put")
 option_type_dropdown.grid(row=3, column=1, padx=5, pady=5)
 
-# Greeks display area
 ttk.Label(root, text="Greeks & Prices:").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
 greeks_text = tk.StringVar()
 greeks_label = ttk.Label(root, textvariable=greeks_text, justify=tk.LEFT, anchor="w")
 greeks_label.grid(row=4, column=1, columnspan=2, padx=5, pady=5)
 
-# Plot button
 plot_button = ttk.Button(root, text="Plot P/L", command=lambda: calculate_and_plot_pl(option_type.get()))
 plot_button.grid(row=7, column=0, columnspan=3, pady=10)
 
-# Output field
 result_text = tk.StringVar()
 result_label = ttk.Label(root, textvariable=result_text, justify=tk.LEFT, anchor="w")
 result_label.grid(row=6, column=0, columnspan=3, padx=5, pady=10)
 
-# Run the GUI loop
 root.mainloop()
