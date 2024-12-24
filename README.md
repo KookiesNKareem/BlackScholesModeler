@@ -9,9 +9,6 @@ This project is a Python-based application that calculates the price of European
 - **Interactive GUI**: Built with `tkinter`, the graphical interface allows users to visualize Profit/Loss (P/L) diagrams, Greeks, and adjust strike price, volatility, and time to maturity dynamically.
 - **Detailed Visualizations**: Generate dynamic P/L diagrams with break-even analysis and probability of profit using `matplotlib`.
 
-## Screenshots
-
-
 ## Key Features Explained
 
 ### Black-Scholes Analytical Pricing
@@ -25,6 +22,10 @@ The application calculates and displays option Greeks, such as Delta, Gamma, The
 
 ### Real-Time Data Integration
 Stock prices and risk-free rates are fetched dynamically from YFinance and the FRED API, ensuring up-to-date calculations.
+
+## Screenshots
+![AAPL Put](/screenshots/AAPLPut.png?raw=true=)
+![NVDA Call](/screenshots/NVDACall.png?raw=true=)
 
 ## Usage
 1. Run the application
